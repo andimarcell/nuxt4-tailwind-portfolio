@@ -14,8 +14,8 @@ export default defineNuxtConfig({
 
   modules: ["@nuxtjs/color-mode", "@nuxt/content", "@nuxtjs/seo"],
   site: {
-    url: "http://localhost:3000",
-    name: "Portofolio Andi",
+    url: "https://andimarcell.vercel.app",
+    name: "Portofolio Andi Marsituru Pakke",
   },
   nitro: {
     prerender: {

@@ -3,12 +3,28 @@ definePageMeta({
   layout: "app",
 });
 
-useHead({
-  title: "Blog",
-});
-
+const route = useRoute();
 const activeId = ref(null);
 
+// Tarik data spesifik menggunakan koleksi 'blog'
+const { data: page } = await useAsyncData(route.path, () => {
+  return queryCollection("blog").path(route.path).first();
+});
+
+useHead({
+  title: () => page.value?.title || "Blog",
+});
+
+useSeoMeta({
+  title: () => page.value?.title || "Blog",
+  description: () => page.value?.description,
+  ogTitle: () => page.value?.title,
+  ogDescription: () => page.value?.description,
+  twitterTitle: () => page.value?.title,
+  twitterDescription: () => page.value?.description,
+});
+
+// Setup scrollspy observer for headings
 onMounted(() => {
   const observer = new IntersectionObserver(
     (entries) => {
@@ -18,78 +34,47 @@ onMounted(() => {
         }
       }
     },
-    { threshold: 0.5 },
+    { threshold: 0.3, rootMargin: "0px 0px -40% 0px" }
   );
-  setTimeout(() => {
-    document.querySelectorAll("h2, h3").forEach((el) => observer.observe(el));
-  }, 500);
 
-  // Cari semua h2 dan h3 di dalam artikel
-  const elements = document.querySelectorAll("h2, h3");
-  elements.forEach((el) => observer.observe(el));
+  const observeHeadings = () => {
+    const headings = document.querySelectorAll("article h2, article h3");
+    headings.forEach((h) => observer.observe(h));
+  };
+
+  setTimeout(observeHeadings, 300);
 
   onBeforeUnmount(() => {
-    elements.forEach((el) => observer.unobserve(el));
+    const headings = document.querySelectorAll("article h2, article h3");
+    headings.forEach((h) => observer.unobserve(h));
   });
-});
-
-const route = useRoute();
-// console.log(route);
-
-// Tarik data spesifik menggunakan koleksi 'blog'
-const { data: page } = await useAsyncData(route.path, () => {
-  return queryCollection("blog").path(route.path).first();
-});
-
-// Bersih, dinamis, tanpa duplikasi useHead
-useSeoMeta({
-  title: () => page.value?.title || "Blog",
-  description: () => page.value?.description,
-  ogTitle: () => page.value?.title,
-  ogDescription: () => page.value?.description,
-  twitterTitle: () => page.value?.title,
-  twitterDescription: () => page.value?.description,
 });
 </script>
 
 <template>
-  <main class="">
-    <article
-      class="prose dark:prose-invert max-w-none prose-pre:bg-gray-200 dark:prose-pre:bg-gray-800 prose-pre:text-gray-700 dark:prose-pre:text-gray-300"
-    >
-      <template v-if="page">
-        <!-- HEADER BLOG (Visual untuk Pembaca) -->
-        <div
-          class="mb-10 pb-8 border-b border-gray-200 dark:border-gray-700 not-prose"
-        >
-          <h1
-            class="text-4xl md:text-5xl font-extrabold text-gray-900 dark:text-white mb-4 tracking-tight"
-          >
-            {{ page.title }}
-          </h1>
-          <p class="text-xl text-gray-600 dark:text-gray-400 mb-4">
-            {{ page.description }}
-          </p>
+  <div class="space-y-8">
+    <!-- Back to blog navigation -->
+    <div>
+      <NuxtLink
+        to="/blog"
+        class="inline-flex items-center space-x-2 text-xs font-mono font-medium text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 py-1.5 transition-colors group"
+      >
+        <Icon name="arrow-left" class="w-3.5 h-3.5 transform group-hover:-translate-x-1 transition-transform" />
+        <span>Kembali ke Semua Artikel</span>
+      </NuxtLink>
+    </div>
 
-          <!-- Tanggal Publish Cantik dengan Icon -->
-          <div
+    <!-- Article Content -->
+    <template v-if="page">
+      <!-- Article Header -->
+      <header class="space-y-4 pb-8 border-b border-slate-200/80 dark:border-slate-800/80">
+        <!-- Metadata pills -->
+        <div class="flex flex-wrap items-center gap-3 text-xs font-mono text-slate-500 dark:text-slate-400">
+          <span
             v-if="page.publishedAt"
-            class="flex items-center text-sm text-gray-500 dark:text-gray-400 font-medium"
+            class="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
           >
-            <svg
-              class="w-4 h-4 mr-2"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-              ></path>
-            </svg>
+            <Icon name="calendar" class="w-3.5 h-3.5 text-indigo-500" />
             <time :datetime="page.publishedAt">
               {{
                 new Date(page.publishedAt).toLocaleDateString("id-ID", {
@@ -99,149 +84,99 @@ useSeoMeta({
                 })
               }}
             </time>
-          </div>
+          </span>
+
+          <span
+            v-if="page.category"
+            class="px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-950/70 text-indigo-600 dark:text-indigo-300 border border-indigo-200/50 dark:border-indigo-800/50"
+          >
+            {{ page.category }}
+          </span>
+
+          <span class="flex items-center space-x-1">
+            <Icon name="user" class="w-3.5 h-3.5 text-slate-400" />
+            <span>Andi Marsituru Pakke</span>
+          </span>
         </div>
 
-        <!-- 💡 MASTER TABLE METADATA (Untuk Debugging/Portofolio) -->
-        <!-- <section
-          class="mb-12 overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm not-prose"
+        <!-- Headline Title -->
+        <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-[1.2]">
+          {{ page.title }}
+        </h1>
+
+        <!-- Subtitle -->
+        <p v-if="page.description" class="text-lg sm:text-xl text-slate-600 dark:text-slate-300 leading-relaxed font-normal">
+          {{ page.description }}
+        </p>
+      </header>
+
+      <!-- Main Layout: Content + TOC -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
+        <!-- Content Column -->
+        <div
+          class="lg:col-span-8"
+          :class="{ 'lg:col-span-12': !page.body?.toc?.links?.length }"
         >
-          <table
-            class="w-full text-sm text-left text-gray-700 dark:text-gray-300"
-          >
-            <tbody class="divide-y divide-gray-200 dark:divide-gray-800"> -->
-        <!-- Baris Title -->
-        <!-- <tr>
-                <th
-                  class="px-6 py-4 font-semibold bg-gray-50 dark:bg-gray-950/50 w-32 border-r border-gray-200 dark:border-gray-800"
-                >
-                  title
-                </th>
-                <td class="px-6 py-4">{{ page.title }}</td>
-              </tr> -->
-
-        <!-- Baris Description -->
-        <!-- <tr>
-                <th
-                  class="px-6 py-4 font-semibold bg-gray-50 dark:bg-gray-950/50 border-r border-gray-200 dark:border-gray-800"
-                >
-                  description
-                </th>
-                <td class="px-6 py-4">{{ page.description }}</td>
-              </tr> -->
-
-        <!-- Baris Head (Nested Table) -->
-        <!-- <tr v-if="page.head && page.head.meta">
-                <th
-                  class="px-6 py-4 font-semibold bg-gray-50 dark:bg-gray-950/50 align-top border-r border-gray-200 dark:border-gray-800"
-                >
-                  head
-                </th>
-                <td class="p-0">
-                  <table class="w-full text-sm">
-                    <thead>
-                      <tr
-                        class="bg-gray-50 dark:bg-gray-950/50 border-b border-gray-200 dark:border-gray-800"
-                      >
-                        <th
-                          class="px-6 py-3 font-semibold border-r border-gray-200 dark:border-gray-800 w-1/2 text-center"
-                        >
-                          name
-                        </th>
-                        <th class="px-6 py-3 font-semibold w-1/2 text-center">
-                          content
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody
-                      class="divide-y divide-gray-200 dark:divide-gray-800"
-                    >
-                      <tr
-                        v-for="(metaItem, index) in page.head.meta"
-                        :key="index"
-                        class="hover:bg-gray-50 dark:hover:bg-gray-800/50"
-                      >
-                        <td
-                          class="px-6 py-3 border-r border-gray-200 dark:border-gray-800 text-center"
-                        >
-                          {{ metaItem.name }}
-                        </td>
-                        <td class="px-6 py-3 text-center">
-                          {{ metaItem.content }}
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </td>
-              </tr> -->
-
-        <!-- Baris PublishedAt (Format Raw) -->
-        <!-- <tr v-if="page.publishedAt">
-                <th
-                  class="px-6 py-4 font-semibold bg-gray-50 dark:bg-gray-950/50 border-r border-gray-200 dark:border-gray-800"
-                >
-                  publishedAt
-                </th>
-                <td class="px-6 py-4">{{ page.publishedAt }}</td>
-              </tr> -->
-
-        <!-- Baris TOC -->
-        <!-- <tr v-if="page.toc !== undefined">
-                <th
-                  class="px-6 py-4 font-semibold bg-gray-50 dark:bg-gray-950/50 border-r border-gray-200 dark:border-gray-800"
-                >
-                  toc
-                </th>
-                <td class="px-6 py-4">{{ page.toc }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </section> -->
-
-        <!-- ISI KONTEN BLOG (Markdown) -->
-        <div class="grid grid-cols-6 gap-16">
-          <!-- Grid otomatis menyesuaikan -->
-          <div
-            :class="{
-              'col-span-6 md:col-span-4': page.body?.toc?.links?.length > 0,
-              'col-span-6': !page.body?.toc?.links?.length,
-            }"
-          >
+          <article class="prose prose-slate dark:prose-invert max-w-none prose-headings:font-bold prose-headings:tracking-tight prose-a:text-indigo-600 dark:prose-a:text-indigo-400 prose-img:rounded-2xl prose-img:shadow-md prose-pre:rounded-2xl prose-pre:border prose-pre:border-slate-800">
             <ContentRenderer :value="page" />
-          </div>
+          </article>
 
-          <!-- TOC hanya muncul jika links ada DAN jumlahnya lebih dari 0 -->
-          <div
-            class="md:col-span-2 not-prose hidden md:block"
-            v-if="page.body?.toc?.links?.length > 0"
-          >
-            <aside class="sticky top-8">
-              <div class="font-semibold mb-2">Table of Content</div>
-              <nav>
-                <TocLink :links="page.body.toc.links" :active-id="activeId" />
-              </nav>
-            </aside>
-          </div>
-        </div>
-      </template>
-
-      <!-- ERROR STATE -->
-      <div v-else class="text-center mt-20 not-prose">
-        <ErrorDisplay
-          title="404"
-          description="Sepertinya tulisan yang kamu cari tidak ada di halaman ini."
-          :show-button="false"
-        >
-          <template #action>
+          <!-- Bottom Article Footer -->
+          <div class="mt-16 pt-8 border-t border-slate-200/80 dark:border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-4">
             <NuxtLink
               to="/blog"
-              class="inline-block mt-6 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              class="inline-flex items-center space-x-2 px-5 py-2.5 rounded-xl glass-panel text-sm font-medium hover:border-indigo-400/50 text-slate-700 dark:text-slate-200 transition-colors"
             >
-              Kembali ke Blog
+              <Icon name="arrow-left" class="w-4 h-4" />
+              <span>Daftar Artikel</span>
             </NuxtLink>
-          </template>
-        </ErrorDisplay>
+
+            <a
+              href="#top"
+              class="inline-flex items-center space-x-1.5 text-xs font-mono text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+            >
+              <span>Kembali ke Atas</span>
+              <Icon name="arrow-up-right" class="w-3.5 h-3.5" />
+            </a>
+          </div>
+        </div>
+
+        <!-- Sticky Table of Contents Column -->
+        <aside
+          v-if="page.body?.toc?.links?.length"
+          class="hidden lg:block lg:col-span-4 sticky top-24 space-y-4"
+        >
+          <div class="glass-panel rounded-2xl p-5 border border-slate-200/80 dark:border-slate-800/80 shadow-xs">
+            <div class="flex items-center space-x-2 pb-3 mb-3 border-b border-slate-100 dark:border-slate-800 text-xs font-mono font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+              <Icon name="layers" class="w-3.5 h-3.5 text-indigo-500" />
+              <span>Daftar Isi</span>
+            </div>
+            <nav class="max-h-[70vh] overflow-y-auto pr-2">
+              <TocLink :links="page.body.toc.links" :active-id="activeId" />
+            </nav>
+          </div>
+        </aside>
       </div>
-    </article>
-  </main>
+    </template>
+
+    <!-- Error State 404 -->
+    <div v-else class="text-center py-20 space-y-4">
+      <div class="w-16 h-16 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mx-auto text-2xl font-bold">
+        404
+      </div>
+      <h2 class="text-2xl font-bold text-slate-900 dark:text-white">
+        Artikel Tidak Ditemukan
+      </h2>
+      <p class="text-sm text-slate-500 max-w-sm mx-auto">
+        Maaf, artikel yang Anda tuju mungkin telah dipindahkan atau belum tersedia.
+      </p>
+      <NuxtLink
+        to="/blog"
+        class="inline-flex items-center space-x-2 px-5 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors"
+      >
+        <span>Lihat Semua Artikel</span>
+        <Icon name="arrow-right" class="w-4 h-4" />
+      </NuxtLink>
+    </div>
+  </div>
 </template>

@@ -7,16 +7,16 @@
 <style>
 .page-enter-active,
 .page-leave-active {
-  transition: all 0.3s ease-out;
+  transition: opacity 0.2s ease-out, transform 0.2s ease-out;
 }
 
 .page-enter-from {
   opacity: 0;
-  filter: grayscale(1);
+  transform: translateY(6px);
 }
 
 .page-leave-to {
   opacity: 0;
-  filter: grayscale(1);
+  transform: translateY(-6px);
 }
 </style>
