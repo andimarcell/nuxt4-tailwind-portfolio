@@ -4,10 +4,79 @@ definePageMeta({
 });
 
 useHead({
-  title: "Home",
+  title: "Beranda",
 });
 
-// Fetch latest blog posts from Nuxt Content
+// Interactive Slider 1: FTracker Expense Trend (-40% to +40%)
+const expenseDelta = ref(12);
+
+const expenseStatus = computed(() => {
+  const val = Number(expenseDelta.value);
+  if (val <= -10) {
+    return {
+      text: "Pengeluaran turun signifikan (Optimal)",
+      colorClass: "text-down",
+      label: `${val}% dibanding minggu lalu`,
+    };
+  } else if (val < 5) {
+    return {
+      text: "Relatif stabil",
+      colorClass: "text-muted",
+      label: `${val >= 0 ? '+' : ''}${val}% dibanding minggu lalu`,
+    };
+  } else if (val < 25) {
+    return {
+      text: "Perlu evaluasi (Pengeluaran naik)",
+      colorClass: "text-up",
+      label: `+${val}% dibanding minggu lalu`,
+    };
+  } else {
+    return {
+      text: "Waspada: Latte Factor terdeteksi tinggi",
+      colorClass: "text-up font-bold",
+      label: `+${val}% dibanding minggu lalu`,
+    };
+  }
+});
+
+// Interactive Slider 2: AEGIS Power Load (0 W to 2200 W)
+const currentWatts = ref(1560);
+const MAX_WATTS = 2200;
+const THRESHOLD = 0.7;
+
+// Dynamic fuzzy membership calculation for "Tinggi"
+const fuzzyHigh = computed(() => {
+  const w = Number(currentWatts.value);
+  // Linear ramp between 900W and 2000W
+  if (w <= 900) return 0;
+  if (w >= 2000) return 1;
+  return Number(((w - 900) / (2000 - 900)).toFixed(2));
+});
+
+const loadStatus = computed(() => {
+  const membership = fuzzyHigh.value;
+  if (membership >= THRESHOLD) {
+    return {
+      statusText: "Beban Kritis: Load Shedding Aktif",
+      colorClass: "text-up font-bold",
+      desc: "Relay memutus daya pada saklar non-prioritas",
+    };
+  } else if (membership >= 0.45) {
+    return {
+      statusText: "Dipantau, mendekati batas",
+      colorClass: "text-muted",
+      desc: "Konsumsi daya tinggi namun masih dalam batas aman",
+    };
+  } else {
+    return {
+      statusText: "Beban normal & aman",
+      colorClass: "text-down",
+      desc: "Konsumsi daya stabil di bawah batas kuota",
+    };
+  }
+});
+
+// Fetch latest blog posts
 const { data: latestArticles } = await useAsyncData("home-latest-blogs", () => {
   return queryCollection("blog")
     .where("path", "!=", "/blog")
@@ -15,349 +84,257 @@ const { data: latestArticles } = await useAsyncData("home-latest-blogs", () => {
     .limit(3)
     .all();
 });
-
-// Tech stack items with badges and descriptions
-const techStack = [
-  { name: "Nuxt 4", category: "Framework", icon: "zap", color: "from-emerald-500 to-teal-600" },
-  { name: "Vue.js 3", category: "Frontend", icon: "code", color: "from-green-500 to-emerald-600" },
-  { name: "Tailwind CSS v4", category: "Styling", icon: "sparkles", color: "from-cyan-500 to-blue-600" },
-  { name: "Supabase & RLS", category: "Backend / DB", icon: "layers", color: "from-emerald-600 to-green-700" },
-  { name: "Python & IoT", category: "Hardware & AI", icon: "cpu", color: "from-amber-500 to-orange-600" },
-  { name: "CapacitorJS", category: "Mobile Hybrid", icon: "terminal", color: "from-blue-500 to-indigo-600" },
-];
-
-const featuredProjects = [
-  {
-    title: "FTracker: Hybrid Finance Tracker",
-    badge: "Flagship Project",
-    category: "Nuxt 4 · Supabase RLS · CapacitorJS",
-    description:
-      "Aplikasi pelacak keuangan mahasiswa berkinerja tinggi yang berevolusi dari riset skripsi menjadi produk hybrid market-ready dengan Dynamic Trend Indicator dan visualisasi arus kas reaktif.",
-    image: "/images/Stylish-Charcoal-FTracker-Banner.png",
-    demoUrl: "https://mycomun.vercel.app/",
-    articleUrl: "/blog/what-is-ftracker",
-    githubUrl: "https://github.com/andimarcell",
-    highlights: ["Row Level Security (RLS)", "Haptic Feedback", "Mobile Native APK", "Zero-Latency Input"],
-  },
-  {
-    title: "Sistem AEGIS: Smart Home IoT Monitoring",
-    badge: "Freelance & AI IoT",
-    category: "Python · Fuzzy Logic · Firebase RTDB · MQTT",
-    description:
-      "Dashboard monitoring konsumsi energi listrik rumah pintar secara real-time yang terintegrasi dengan kecerdasan buatan Fuzzy Logic Engine untuk otomatisasi load shedding dan pencegahan anomali visual.",
-    image: "/images/AEGIS-Smart-Home-Energy-Dashboard-banner.png",
-    demoUrl: null,
-    articleUrl: "/blog/aegis",
-    githubUrl: "https://github.com/andimarcell/aegis-monitoring-listrik-fuzzy",
-    highlights: ["Fuzzy Inference Engine", "Dynamic Axis Scaling", "MQTT Telemetry", "Firebase Sync"],
-  },
-];
 </script>
 
 <template>
-  <div class="space-y-16 sm:space-y-24">
+  <div class="space-y-16 sm:space-y-20">
     <!-- ======================================================== -->
     <!-- HERO SECTION                                             -->
     <!-- ======================================================== -->
-    <section class="pt-6 sm:pt-10">
-      <div class="space-y-6 max-w-3xl">
-        <!-- Status Pill -->
-        <div class="inline-flex items-center space-x-2.5 px-3.5 py-1.5 rounded-full bg-indigo-50/80 dark:bg-indigo-950/60 border border-indigo-200/60 dark:border-indigo-800/60 text-xs font-medium text-indigo-700 dark:text-indigo-300">
-          <span class="relative flex h-2 w-2">
-            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-            <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-          </span>
-          <span>Open to Software Engineering Opportunities</span>
-          <span class="text-slate-300 dark:text-slate-700">|</span>
-          <span class="font-mono text-[11px] text-slate-500 dark:text-slate-400">Balikpapan, ID</span>
-        </div>
+    <section class="space-y-6 pt-2">
+      <!-- Subhead (Identity & Education) -->
+      <div class="text-xs sm:text-sm font-mono text-muted">
+        Software engineer di Balikpapan, lulusan S1 Informatika Universitas Mulia Balikpapan (2026).
+      </div>
 
-        <!-- Headline -->
-        <div class="space-y-3">
-          <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-[1.15]">
-            Membangun Web Modern yang <span class="gradient-text">Cepat, Presisi,</span> &amp; Memanjakan Mata.
-          </h1>
-          <p class="text-lg sm:text-xl text-slate-600 dark:text-slate-300 leading-relaxed font-normal">
-            Halo, saya <span class="font-semibold text-slate-900 dark:text-white">Andi Marsituru Pakke</span> — Software Engineer yang berfokus pada ekosistem <span class="text-indigo-600 dark:text-indigo-400 font-medium">Nuxt 4</span>, arsitektur database <span class="text-emerald-600 dark:text-emerald-400 font-medium">Supabase</span>, serta integrasi sistem data reaktif &amp; IoT.
-          </p>
-        </div>
+      <!-- Main Headline: Two Concrete Evidences -->
+      <h1 class="text-3xl sm:text-4xl lg:text-5xl font-display font-extrabold text-ink tracking-tight leading-[1.2]">
+        Aplikasi keuangan yang sudah live, dan dashboard listrik yang mengatur bebannya sendiri.
+      </h1>
 
-        <!-- Action CTAs -->
-        <div class="flex flex-wrap items-center gap-3 pt-2">
-          <NuxtLink
-            to="/project"
-            class="inline-flex items-center space-x-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white font-medium text-sm shadow-md shadow-indigo-500/25 hover:shadow-indigo-500/35 hover:-translate-y-0.5 transition-all duration-200"
+      <!-- Body / Summary -->
+      <p class="text-base sm:text-lg text-ink font-body leading-relaxed max-w-3xl">
+        Saya membangun web dengan Nuxt dan Supabase, dan sistem IoT dengan Python dan MQTT. Dua proyek di bawah dikerjakan dari rancangan sampai berjalan.
+      </p>
+
+      <!-- Action Buttons & Availability Note -->
+      <div class="space-y-3 pt-2">
+        <div class="flex flex-wrap items-center gap-3">
+          <a
+            href="#proyek"
+            class="px-5 py-2.5 rounded bg-ink text-paper font-display text-sm font-semibold hover:opacity-90 transition-opacity"
           >
-            <span>Jelajahi Proyek</span>
-            <Icon name="arrow-right" class="w-4 h-4" />
-          </NuxtLink>
-
-          <NuxtLink
-            to="/blog"
-            class="inline-flex items-center space-x-2 px-5 py-2.5 rounded-xl glass-panel text-slate-700 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-400 font-medium text-sm hover:-translate-y-0.5 transition-all duration-200"
-          >
-            <Icon name="book-open" class="w-4 h-4 text-slate-400" />
-            <span>Baca Blog</span>
-          </NuxtLink>
+            Lihat proyek
+          </a>
 
           <NuxtLink
             to="/about"
-            class="inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white text-sm font-medium hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            class="px-4 py-2.5 rounded panel text-ink font-display text-sm font-medium hover:border-ink transition-colors"
           >
-            <span>Tentang Saya</span>
-            <Icon name="arrow-up-right" class="w-3.5 h-3.5" />
+            Unduh CV
           </NuxtLink>
-        </div>
-      </div>
-    </section>
 
-    <!-- ======================================================== -->
-    <!-- TECH STACK & COMPETENCY BENTO                            -->
-    <!-- ======================================================== -->
-    <section class="space-y-6">
-      <div class="flex items-center justify-between">
-        <div>
-          <h2 class="text-2xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center space-x-2">
-            <span>Teknologi &amp; Keahlian Inti</span>
-          </h2>
-          <p class="text-sm text-slate-500 dark:text-slate-400">
-            Fondasi teknologi yang saya gunakan untuk mewujudkan produk digital tangguh
-          </p>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        <div
-          v-for="item in techStack"
-          :key="item.name"
-          class="glass-panel p-4 rounded-2xl flex flex-col items-center justify-center text-center space-y-2 hover:border-indigo-400/50 dark:hover:border-indigo-500/40 hover:-translate-y-1 transition-all duration-200 group"
-        >
-          <div
-            class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-700 dark:text-slate-300 group-hover:scale-110 group-hover:text-indigo-500 transition-all duration-200"
+          <a
+            href="mailto:andimarsituru@gmail.com"
+            class="px-4 py-2.5 text-muted hover:text-ink font-display text-sm font-medium transition-colors"
           >
-            <Icon :name="item.icon" class="w-5 h-5" />
-          </div>
-          <div>
-            <div class="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-              {{ item.name }}
-            </div>
-            <div class="text-[10px] text-slate-400 dark:text-slate-500 font-mono mt-0.5">
-              {{ item.category }}
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ======================================================== -->
-    <!-- FEATURED PROJECTS SPOTLIGHT                              -->
-    <!-- ======================================================== -->
-    <section class="space-y-8">
-      <div class="flex items-end justify-between">
-        <div>
-          <span class="text-xs font-mono font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
-            Karya Unggulan
-          </span>
-          <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white mt-1">
-            Proyek Pilihan &amp; Studi Kasus
-          </h2>
-          <p class="text-sm text-slate-500 dark:text-slate-400 max-w-lg mt-1">
-            Eksplorasi mendalam dari riset akademis hingga implementasi sistem berbasis IoT dan aplikasi web live.
-          </p>
+            Kirim email
+          </a>
         </div>
 
-        <NuxtLink
-          to="/project"
-          class="hidden sm:inline-flex items-center space-x-1.5 text-xs font-mono font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
-        >
-          <span>Semua Proyek</span>
-          <Icon name="arrow-right" class="w-3.5 h-3.5" />
-        </NuxtLink>
+        <p class="text-xs text-muted font-body">
+          Terbuka untuk kerja full-time atau remote, dan proyek freelance.
+        </p>
       </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div
-          v-for="project in featuredProjects"
-          :key="project.title"
-          class="glass-panel rounded-3xl overflow-hidden flex flex-col group hover:border-indigo-400/50 dark:hover:border-indigo-500/40 hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-300"
-        >
-          <!-- Project Banner Image -->
-          <div class="relative overflow-hidden aspect-[16/9] bg-slate-100 dark:bg-slate-800">
-            <img
-              :src="project.image"
-              :alt="project.title"
-              class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-              loading="lazy"
-            />
-            <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60"></div>
-            <div class="absolute top-4 left-4">
-              <span class="px-3 py-1 rounded-full text-xs font-medium bg-slate-900/80 backdrop-blur-md text-white border border-white/10 shadow-sm">
-                {{ project.badge }}
+      <!-- ======================================================== -->
+      <!-- INTERACTIVE SLIDERS: DEMO THE ACTUAL LOGIC               -->
+      <!-- ======================================================== -->
+      <div class="panel p-5 sm:p-7 space-y-6 mt-8 bg-paper">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 divide-y md:divide-y-0 md:divide-x divide-rule">
+          <!-- Slider 1: FTracker Expense Trend Indicator -->
+          <div class="space-y-3 md:pr-4">
+            <div>
+              <div class="font-display font-bold text-base text-ink">
+                Tren pengeluaran
+              </div>
+              <div class="text-xs text-muted font-body">
+                Cara kerja indikator warna di FTracker
+              </div>
+            </div>
+
+            <!-- Slider control -->
+            <div class="space-y-1.5 pt-1">
+              <div class="flex justify-between text-xs font-mono text-muted">
+                <span>Selisih pengeluaran dibanding minggu lalu</span>
+                <span>-40% s.d. +40%</span>
+              </div>
+              <input
+                v-model="expenseDelta"
+                type="range"
+                min="-40"
+                max="40"
+                step="1"
+                class="w-full h-1.5 bg-rule rounded-lg appearance-none cursor-pointer"
+              />
+            </div>
+
+            <!-- Metric & Live Result -->
+            <div class="pt-2 flex items-baseline justify-between border-t border-rule/50">
+              <span class="font-mono text-xl sm:text-2xl font-bold" :class="expenseStatus.colorClass">
+                {{ expenseStatus.label }}
+              </span>
+              <span class="text-xs font-display font-medium" :class="expenseStatus.colorClass">
+                {{ expenseStatus.text }}
               </span>
             </div>
           </div>
 
-          <!-- Project Details -->
-          <div class="p-6 sm:p-7 flex-1 flex flex-col justify-between space-y-4">
-            <div class="space-y-2">
-              <div class="text-xs font-mono text-indigo-600 dark:text-cyan-400 font-medium">
-                {{ project.category }}
+          <!-- Slider 2: AEGIS Power Load Shedding -->
+          <div class="space-y-3 pt-6 md:pt-0 md:pl-8">
+            <div>
+              <div class="font-display font-bold text-base text-ink">
+                Beban daya
               </div>
-              <h3 class="text-xl font-bold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-                {{ project.title }}
-              </h3>
-              <p class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-                {{ project.description }}
-              </p>
+              <div class="text-xs text-muted font-body">
+                Cara AEGIS memutuskan kapan mematikan beban
+              </div>
+            </div>
 
-              <!-- Highlight Badges -->
-              <div class="flex flex-wrap gap-1.5 pt-2">
-                <span
-                  v-for="hl in project.highlights"
-                  :key="hl"
-                  class="text-[11px] px-2.5 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-mono"
-                >
-                  {{ hl }}
+            <!-- Slider control -->
+            <div class="space-y-1.5 pt-1">
+              <div class="flex justify-between text-xs font-mono text-muted">
+                <span>Beban rumah saat ini</span>
+                <span>0 W s.d. {{ MAX_WATTS.toLocaleString() }} W</span>
+              </div>
+              <input
+                v-model="currentWatts"
+                type="range"
+                min="0"
+                :max="MAX_WATTS"
+                step="20"
+                class="w-full h-1.5 bg-rule rounded-lg appearance-none cursor-pointer"
+              />
+            </div>
+
+            <!-- Metric & Live Result -->
+            <div class="pt-2 space-y-1 border-t border-rule/50">
+              <div class="flex items-baseline justify-between">
+                <span class="font-mono text-xl sm:text-2xl font-bold" :class="loadStatus.colorClass">
+                  {{ Number(currentWatts).toLocaleString() }} W
+                </span>
+                <span class="text-xs font-mono text-muted">
+                  keanggotaan &ldquo;tinggi&rdquo;: <strong class="text-ink">{{ fuzzyHigh.toFixed(2) }}</strong> (ambang: {{ THRESHOLD }})
                 </span>
               </div>
-            </div>
-
-            <!-- Action Buttons -->
-            <div class="pt-4 border-t border-slate-200/70 dark:border-slate-800/70 flex items-center justify-between">
-              <div class="flex items-center space-x-3">
-                <a
-                  v-if="project.demoUrl"
-                  :href="project.demoUrl"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="inline-flex items-center space-x-1.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
-                >
-                  <Icon name="external-link" class="w-3.5 h-3.5" />
-                  <span>Live App</span>
-                </a>
-                <a
-                  v-if="project.githubUrl"
-                  :href="project.githubUrl"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="inline-flex items-center space-x-1.5 text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-                >
-                  <Icon name="github" class="w-3.5 h-3.5" />
-                  <span>GitHub</span>
-                </a>
+              <div class="text-xs font-display font-medium" :class="loadStatus.colorClass">
+                {{ loadStatus.statusText }} &mdash; <span class="text-muted font-normal font-body">{{ loadStatus.desc }}</span>
               </div>
-
-              <NuxtLink
-                :to="project.articleUrl"
-                class="inline-flex items-center space-x-1 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-cyan-400"
-              >
-                <span>Studi Kasus</span>
-                <Icon name="arrow-right" class="w-3.5 h-3.5" />
-              </NuxtLink>
             </div>
           </div>
+        </div>
+
+        <!-- Footnote note -->
+        <div class="text-[11px] font-mono text-muted pt-2 border-t border-rule/60">
+          Ilustrasi konsep dua proyek di bawah. Angka dan ambang hanya contoh.
         </div>
       </div>
     </section>
 
     <!-- ======================================================== -->
-    <!-- LATEST ARTICLES / INSIGHTS                               -->
+    <!-- CASE STUDIES SECTION                                     -->
+    <!-- ======================================================== -->
+    <section id="proyek" class="space-y-8 scroll-mt-12">
+      <div class="border-b border-rule pb-3 flex items-baseline justify-between">
+        <div>
+          <h2 class="text-2xl sm:text-3xl font-display font-bold text-ink">
+            Proyek
+          </h2>
+          <p class="text-sm text-muted font-body mt-0.5">
+            Dua studi kasus rekayasa dari rancangan arsitektur sampai berjalan.
+          </p>
+        </div>
+      </div>
+
+      <!-- Case Study 1: FTracker -->
+      <CaseStudyCard
+        title="FTracker"
+        tagline="Pelacak keuangan untuk mahasiswa, tersedia di web dan Android."
+        problem="Pengeluaran kecil harian (Latte Factor) jarang terasa sampai sudah menumpuk."
+        :decisions="[
+          'Row Level Security di PostgreSQL, jadi data tiap pengguna terisolasi di level basis data.',
+          'Warna indikator berubah mengikuti tren pengeluaran, supaya kebiasaan buruk terlihat sebelum terlambat.',
+          'Satu basis kode: Nuxt 4 untuk web, CapacitorJS untuk APK Android.'
+        ]"
+        results="Sudah live di Vercel dan Supabase, dan tersedia sebagai APK."
+        resultsPlaceholder="[isi hasil uji yang kamu ukur sendiri, mis. tingkat akurasi pencatatan atau feedback mahasiswa]"
+        techStack="Dibangun dengan Nuxt 4, Supabase (PostgreSQL), CapacitorJS, dan Tailwind CSS v4."
+        demoUrl="https://mycomun.vercel.app/"
+        githubUrl="https://github.com/andimarcell"
+        articleUrl="/blog/what-is-ftracker"
+        image="/images/Stylish-Charcoal-FTracker-Banner.png"
+        imageCaption="Screenshot asli: web dan tampilan APK"
+      />
+
+      <!-- Case Study 2: AEGIS -->
+      <CaseStudyCard
+        title="AEGIS"
+        tagline="Dashboard monitoring daya rumah pintar dengan kendali beban otomatis."
+        problem="Konsumsi daya rumah perlu diawasi dan dikendalikan tanpa campur tangan manual, sementara data sensor yang terlambat membuat grafik anjlok."
+        :decisions="[
+          'Fuzzy Logic Engine menentukan kapan saklar dimatikan otomatis (load shedding).',
+          'Data holding: nilai terakhir ditahan saat data terlambat, sehingga grafik tidak jatuh ke nol.',
+          'MQTT untuk telemetri dan Firebase RTDB untuk sinkronisasi ke dashboard.'
+        ]"
+        results="Diselesaikan sebagai proyek freelance."
+        resultsPlaceholder="[isi angka terukur, mis. perbandingan grafik sebelum dan sesudah data holding]"
+        techStack="Dibangun dengan Python (Flask), Scikit-Fuzzy, MQTT, Firebase RTDB, dan Chart.js."
+        demoUrl=""
+        githubUrl="https://github.com/andimarcell/aegis-monitoring-listrik-fuzzy"
+        articleUrl="/blog/aegis"
+        demoNote="Demo tidak dibuka untuk umum (proyek klien)"
+        image="/images/AEGIS-Smart-Home-Energy-Dashboard-banner.png"
+        imageCaption="Screenshot dashboard atau foto rangkaian ESP32"
+      />
+    </section>
+
+    <!-- ======================================================== -->
+    <!-- RECENT WRITINGS / ARTICLES                               -->
     <!-- ======================================================== -->
     <section class="space-y-6">
-      <div class="flex items-end justify-between">
+      <div class="border-b border-rule pb-3 flex items-baseline justify-between">
         <div>
-          <span class="text-xs font-mono font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
-            Penulisan &amp; Dokumentasi
-          </span>
-          <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white mt-1">
-            Artikel Terbaru
+          <h2 class="text-xl sm:text-2xl font-display font-bold text-ink">
+            Tulisan Terbaru
           </h2>
-          <p class="text-sm text-slate-500 dark:text-slate-400 max-w-lg mt-1">
-            Catatan proses rekayasa perangkat lunak, arsitektur sistem, dan tutorial web development.
+          <p class="text-sm text-muted font-body mt-0.5">
+            Dokumentasi keputusan teknis, arsitektur, dan catatan studi.
           </p>
         </div>
 
         <NuxtLink
           to="/blog"
-          class="hidden sm:inline-flex items-center space-x-1.5 text-xs font-mono font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
+          class="text-xs font-display font-semibold text-ink underline hover:opacity-80"
         >
-          <span>Buka Semua Artikel</span>
-          <Icon name="arrow-right" class="w-3.5 h-3.5" />
+          Semua tulisan &rarr;
         </NuxtLink>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+      <div class="divide-y divide-rule">
         <NuxtLink
           v-for="article in latestArticles"
           :key="article.path"
           :to="article.path"
-          class="glass-panel rounded-2xl p-5 flex flex-col justify-between group hover:border-indigo-400/50 dark:hover:border-indigo-500/40 hover:-translate-y-1 transition-all duration-200"
+          class="py-4 block hover:opacity-80 transition-opacity space-y-1"
         >
-          <div class="space-y-3">
-            <div class="flex items-center space-x-2 text-[11px] font-mono text-slate-400 dark:text-slate-500">
-              <Icon name="calendar" class="w-3.5 h-3.5" />
-              <span>
-                {{ article.publishedAt ? new Date(article.publishedAt).toLocaleDateString("id-ID", { year: "numeric", month: "short", day: "numeric" }) : 'Recent' }}
-              </span>
-            </div>
-            <h3 class="font-bold text-base text-slate-900 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors line-clamp-2">
+          <div class="flex flex-col sm:flex-row sm:items-baseline justify-between gap-1">
+            <h3 class="font-display font-bold text-base text-ink">
               {{ article.title }}
             </h3>
-            <p class="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed">
-              {{ article.description }}
-            </p>
+            <span v-if="article.publishedAt" class="text-xs font-mono text-muted shrink-0">
+              {{
+                new Date(article.publishedAt).toLocaleDateString("id-ID", {
+                  year: "numeric",
+                  month: "short",
+                  day: "numeric",
+                })
+              }}
+            </span>
           </div>
-
-          <div class="pt-4 mt-4 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs font-medium text-indigo-600 dark:text-indigo-400">
-            <span>Baca Selengkapnya</span>
-            <Icon name="arrow-right" class="w-3.5 h-3.5 transform group-hover:translate-x-1 transition-transform" />
-          </div>
-        </NuxtLink>
-      </div>
-    </section>
-
-    <!-- ======================================================== -->
-    <!-- CALL TO ACTION / COLLABORATE CARD                        -->
-    <!-- ======================================================== -->
-    <section>
-      <div class="glass-panel relative overflow-hidden rounded-3xl p-8 sm:p-10 border border-indigo-200/80 dark:border-indigo-900/60 bg-gradient-to-br from-indigo-500/5 via-transparent to-cyan-500/5">
-        <!-- Glow orb in background -->
-        <div class="absolute -right-20 -bottom-20 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
-
-        <div class="relative z-10 max-w-2xl space-y-4">
-          <div class="inline-flex items-center space-x-2 text-xs font-mono font-semibold px-3 py-1 rounded-full bg-indigo-100 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300">
-            <Icon name="sparkles" class="w-3.5 h-3.5 text-indigo-500" />
-            <span>Mari Bekerja Sama</span>
-          </div>
-
-          <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-            Punya ide proyek menarik atau ingin merekrut Software Engineer?
-          </h2>
-
-          <p class="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed">
-            Saya terbuka untuk diskusi peluang kerja (Full-time / Remote), proyek freelance pembuatan aplikasi web berskala produksi, dashboard data reaktif, ataupun sistem IoT.
+          <p v-if="article.description" class="text-sm text-muted font-body line-clamp-2">
+            {{ article.description }}
           </p>
-
-          <div class="flex flex-wrap items-center gap-3 pt-2">
-            <a
-              href="https://linkedin.com/in/andimarcell"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="inline-flex items-center space-x-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm shadow-md shadow-indigo-600/25 transition-all hover:-translate-y-0.5"
-            >
-              <Icon name="linkedin" class="w-4 h-4" />
-              <span>Hubungi via LinkedIn</span>
-            </a>
-
-            <NuxtLink
-              to="/about"
-              class="inline-flex items-center space-x-2 px-5 py-2.5 rounded-xl glass-panel text-slate-700 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-400 font-medium text-sm transition-all hover:-translate-y-0.5"
-            >
-              <Icon name="user" class="w-4 h-4" />
-              <span>Lihat Profil &amp; Pengalaman</span>
-            </NuxtLink>
-          </div>
-        </div>
+        </NuxtLink>
       </div>
     </section>
   </div>

@@ -17,16 +17,16 @@ defineProps({
 </script>
 
 <template>
-  <ul class="space-y-1.5 text-xs">
+  <ul class="space-y-1.5">
     <li v-for="link in links" :key="link.id">
       <NuxtLink
         :to="{ path: route.path, hash: `#${link.id}` }"
-        class="block py-1 transition-all duration-200"
+        class="block py-0.5 transition-colors"
         :class="[
-          level > 0 ? 'pl-4 text-slate-500 dark:text-slate-400' : 'text-slate-600 dark:text-slate-300',
+          level > 0 ? 'pl-3 text-muted/80 text-[11px]' : 'text-xs',
           activeId === link.id
-            ? 'text-indigo-600 dark:text-indigo-400 font-semibold translate-x-1'
-            : 'hover:text-indigo-500 dark:hover:text-indigo-300',
+            ? 'text-ink font-semibold'
+            : 'text-muted hover:text-ink',
         ]"
       >
         <span class="line-clamp-1">{{ link.text }}</span>
